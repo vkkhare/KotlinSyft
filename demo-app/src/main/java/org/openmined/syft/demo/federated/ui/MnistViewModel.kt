@@ -99,8 +99,8 @@ class MnistViewModel(
                 postData(result)
 
             }
+            model.createDiff()?.let { mnistJob.report(it) }
             postLog("Training done!")
-
         }
 
     }

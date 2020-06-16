@@ -13,6 +13,8 @@ import org.openmined.syft.networking.datamodels.syft.ReportRequest
 import org.openmined.syft.networking.datamodels.syft.ReportResponse
 import org.openmined.syft.proto.State
 import org.openmined.syft.proto.SyftModel
+import org.openmined.syft.proto.SyftTensor
+import org.openmined.syft.proto.minus
 import org.openmined.syft.threading.ProcessSchedulers
 import org.openmined.syft.utilities.FileWriter
 import java.util.concurrent.ConcurrentHashMap
@@ -162,6 +164,16 @@ class SyftJob(
                         .subscribe { reportResponse: ReportResponse ->
                             Log.i(TAG, reportResponse.status)
                         })
+    }
+
+    fun createDiff(): State? {
+        val diff = mutableListOf<SyftTensor>()
+        model.modelState?.let { currentState ->
+            model.startState?.syftTensors?.forEachIndexed { index, value ->
+                diff[index] = currentState.syftTensors[index] - value
+            }
+            return model.startState?.copy(syftTensors = diff)
+        } ?: return null
     }
 
 

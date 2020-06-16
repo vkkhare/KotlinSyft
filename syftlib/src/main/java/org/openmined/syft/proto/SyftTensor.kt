@@ -1,12 +1,17 @@
 package org.openmined.syft.proto
 
+import org.openmined.syft.R
 import org.openmined.syftproto.types.syft.v1.IdOuterClass
 import org.openmined.syftproto.types.torch.v1.SizeOuterClass
 import org.openmined.syftproto.types.torch.v1.Tensor
 import org.openmined.syftproto.types.torch.v1.TensorDataOuterClass
 import org.pytorch.DType
+import org.pytorch.IValue
+import org.pytorch.Module
+import java.io.File
 import java.io.InvalidClassException
 import java.lang.Math.random
+import java.net.URI
 import java.nio.DoubleBuffer
 import java.util.Locale
 import org.openmined.syftproto.types.torch.v1.Tensor.TorchTensor as SyftProtoTensor
@@ -109,6 +114,8 @@ data class SyftTensor(
         return syftTensorBuilder.build()
     }
 
+    fun getIValue(): IValue = IValue.from(getTorchTensor())
+
     // Generate & Return TorchTensor object based on the dtype
     fun getTorchTensor(): TorchTensor {
         return when (dtype) {
@@ -169,4 +176,14 @@ data class SyftTensor(
         }
     }
 
+}
+
+@ExperimentalUnsignedTypes
+operator fun SyftTensor.minus(old: SyftTensor): SyftTensor {
+    val file =
+            File(URI.create("file://android.resource://${this::class.java.`package`?.name}/" + R.raw.diff))
+    val torchModule = Module.load(file.absolutePath)
+    return SyftTensor.fromTorchTensor(
+        torchModule.forward(this.getIValue(), old.getIValue()).toTensor()
+    )
 }
