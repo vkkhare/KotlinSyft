@@ -27,7 +27,7 @@ class TrainingTask(
 
     fun runTask(logger: MnistLogger): Single<Result> {
         syftWorker = Syft.getInstance(configuration, authToken)
-        val mnistJob = syftWorker!!.newJob("mnist", "1.0.0")
+        val mnistJob = syftWorker!!.newJob("mnist", "1.0")
         val statusPublisher = PublishProcessor.create<Result>()
 
         logger.postLog("MNIST job started \n\nChecking for download and upload speeds")
@@ -96,16 +96,17 @@ class TrainingTask(
                 val output = plan.execute(
                     batchData.first,
                     batchData.second,
-                    batchIValue,
-                    lr, paramIValue
-                )?.toTuple()
+                    lr, batchIValue,
+                    paramIValue
+                )?.toTensorList()
                 output?.let { outputResult ->
                     val paramSize = model.stateTensorSize!!
                     val beginIndex = outputResult.size - paramSize
                     val updatedParams =
                             outputResult.slice(beginIndex until outputResult.size)
+                                    .map { IValue.from(it) }
                     model.updateModel(updatedParams)
-                    result = outputResult[0].toTensor().dataAsFloatArray.last()
+                    result = outputResult[0].dataAsFloatArray.last()
                 }
                 logger.postState(ContentState.Training)
                 logger.postData(result)
